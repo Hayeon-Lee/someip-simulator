@@ -1,0 +1,31 @@
+{
+    "unicast": "192.168.77.2",
+    "logging": {
+        "level": "debug",
+        "console": "true"
+    },
+    "applications": [
+        {
+            "name": "hello_world_service",
+            "id": "0x4444"
+        },
+        {
+            "name": "hello_world_client",
+            "id": "0x5555"
+        }
+    ],
+    "services": [
+        {
+            "service": "0x1501",
+            "instance": "0x2222",
+            "unreliable": "30501"
+        }
+    ],
+    "routing": "hello_world_service",
+    "service-discovery": {
+        "enable": "true",
+	"multicast": "224.224.224.245",
+	"port": "30490",
+	"protocol": "udp"
+    }
+}
