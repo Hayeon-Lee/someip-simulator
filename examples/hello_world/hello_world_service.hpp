@@ -20,9 +20,9 @@
 #define LOG_ERR(...) std::fprintf(stderr, __VA_ARGS__), std::fprintf(stderr, "\n")
 #endif
 
-static vsomeip::service_t service_id = 0x1111;
+static vsomeip::service_t service_id = 0x1501;
 static vsomeip::instance_t service_instance_id = 0x2222;
-static vsomeip::method_t service_method_id = 0x3333;
+//static vsomeip::method_t service_method_id = 0x0001;
 
 class hello_world_service {
 public:
@@ -52,7 +52,7 @@ public:
         }
 
         // register a message handler callback for messages sent to our service
-        app_->register_message_handler(service_id, service_instance_id, service_method_id,
+        app_->register_message_handler(service_id, service_instance_id, vsomeip::ANY_METHOD,
                                        std::bind(&hello_world_service::on_message_cbk, this, std::placeholders::_1));
 
         // register a state handler to get called back after registration at the
@@ -71,13 +71,13 @@ public:
         std::unique_lock its_lock(mutex_);
         condition_.wait(its_lock, [this] { return stop_; });
 
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+//        std::this_thread::sleep_for(std::chrono::seconds(5));
         // Stop offering the service
         app_->stop_offer_service(service_id, service_instance_id);
         // unregister the state handler
         app_->unregister_state_handler();
         // unregister the message handler
-        app_->unregister_message_handler(service_id, service_instance_id, service_method_id);
+        app_->unregister_message_handler(service_id, service_instance_id, vsomeip::ANY_METHOD);
         // shutdown the application
         app_->stop();
     }
@@ -91,29 +91,35 @@ public:
     void on_state_cbk(vsomeip::state_type_e _state) {
         if (_state == vsomeip::state_type_e::ST_REGISTERED) {
             // we are registered at the runtime and can offer our service
-            app_->offer_service(service_id, service_instance_id);
+            app_->offer_service(service_id, service_instance_id, 0x02);
         }
     }
 
-    void on_message_cbk(const std::shared_ptr<vsomeip::message>& _request) {
-        // Create a response based upon the request
-        std::shared_ptr<vsomeip::message> resp = rtm_->create_response(_request);
 
-        // Construct string to send back
-        std::string str("Hello ");
-        str.append(reinterpret_cast<const char*>(_request->get_payload()->get_data()), 0, _request->get_payload()->get_length());
+void on_message_cbk(const std::shared_ptr<vsomeip::message>& _request) {
 
-        // Create a payload which will be sent back to the client
-        std::shared_ptr<vsomeip::payload> resp_pl = rtm_->create_payload();
-        std::vector<vsomeip::byte_t> pl_data(str.begin(), str.end());
-        resp_pl->set_data(pl_data);
-        resp->set_payload(resp_pl);
-
-        // Send the response back
-        app_->send(resp);
-        // we have finished
-        terminate();
+    if (_request->get_message_type() !=
+        vsomeip::message_type_e::MT_REQUEST) {
+        return;
     }
+
+    LOG_INF("SOME/IP Request received: Method 0x%04X", _request->get_method());
+
+    // Create a response using the request header
+    auto resp = rtm_->create_response(_request);
+
+    // Empty response payload
+    auto resp_pl = rtm_->create_payload();
+    resp_pl->set_data(std::vector<vsomeip::byte_t>{});
+
+    resp->set_payload(resp_pl);
+    resp->set_return_code(vsomeip::return_code_e::E_OK);
+
+    app_->send(resp);
+
+    LOG_INF("SOME/IP Response sent");
+}
+
 
 private:
     std::shared_ptr<vsomeip::runtime> rtm_;
