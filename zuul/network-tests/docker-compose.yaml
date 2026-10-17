@@ -1,0 +1,71 @@
+volumes:
+  test-shared:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: mode=0755
+
+networks:
+  ci-network-tests:
+    attachable: false
+    driver: macvlan
+    internal: true
+    ipam:
+      config:
+        - subnet: 169.254.87.0/24
+          gateway: 169.254.87.254
+
+x-common: &common
+  image: noble:latest
+  build:
+    args:
+      - http_proxy
+      - https_proxy
+      - no_proxy
+    context: ../..
+    dockerfile: zuul/network-tests/Dockerfile
+  cap_add:
+    - "IPC_LOCK"
+    - "NET_ADMIN"
+    - "PERFMON"
+    - "SYS_ADMIN"
+    - "SYS_PTRACE"
+  environment:
+    ENABLE_COVERAGE: ${ENABLE_COVERAGE-False} # empty to inherit from parent environment (Zuul/Ansible)
+    ENABLE_SANITIZERS: ${ENABLE_SANITIZERS-OFF}
+    ENABLE_THREAD_SANITIZER: ${ENABLE_THREAD_SANITIZER-OFF}
+    GLOBAL_TIMEOUT: 240 minutes
+    STRESS_LABELS: ${STRESS_LABELS-[]}
+    TEST_TIMEOUT_SCALE: ${TEST_TIMEOUT_SCALE-1}
+    VALGRIND_TYPE: ${VALGRIND_TYPE-}
+  networks:
+    - ci-network-tests
+  security_opt:
+    - apparmor:unconfined
+    - seccomp:unconfined
+  ulimits:
+    core: -1
+  tmpfs:
+    - /run/netns:exec,mode=0755
+  volumes:
+    - ${SOURCE_DIR:-../..}:/home/source
+    - ${BUILD_DIR:-../../build}:/home/build
+    - ${LOGS_DIR:-../../logs}:/home/logs
+    - test-shared:/home/test-shared
+
+services:
+  master:
+    <<: *common
+    depends_on:
+      - slave
+    entrypoint: setarch -R /home/source/zuul/network-tests/entrypoint-master
+    sysctls:
+      net.ipv4.tcp_tw_reuse: 2 # Enable TIME_WAIT socket reuse for loopback only
+      net.ipv4.ip_local_port_range: 34600 60999 # Set local port range to exclude SOME/IP server port range
+  slave:
+    <<: *common
+    entrypoint: setarch -R /home/source/zuul/network-tests/entrypoint-slave
+    sysctls:
+      net.ipv4.tcp_tw_reuse: 2 # Enable TIME_WAIT socket reuse for loopback only
+      net.ipv4.ip_local_port_range: 34600 60999 # Set local port range to exclude SOME/IP server port range

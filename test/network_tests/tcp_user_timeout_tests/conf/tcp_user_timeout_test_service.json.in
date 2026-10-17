@@ -1,0 +1,39 @@
+{
+    "unicast": "127.0.0.1",
+    "diagnosis": "0x02",
+    "logging": {
+        "level": "debug",
+        "console": "true"
+    },
+    "tracing" : {
+        "enable" : "true"
+    },
+    "applications": [
+        {
+            "name": "service-app"
+        },
+        {
+            "name": "client-app"
+        }
+    ],
+    "routing": {
+        "host": {
+            "name": "service-app",
+            "unicast": "127.0.0.1",
+            "port": "31000"
+        },
+        "guests": {
+            "unicast": "127.0.0.1",
+            "ports": [
+                {
+                    "first": "31490",
+                    "last": "31491"
+                }
+            ]
+        }
+    },
+    "service-discovery" :
+    {
+        "enable" : "false"
+    }
+}
