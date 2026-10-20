@@ -2815,7 +2815,8 @@ void service_discovery_impl::on_main_phase_timer_expired(const boost::system::er
 }
 
 void service_discovery_impl::send_uni_or_multicast_offerservice(const std::shared_ptr<const serviceinfo>& _info, bool _unicast_flag) {
-    if (_unicast_flag) { // SID_SD_826
+/*
+    	if (_unicast_flag) { // SID_SD_826
         if (last_offer_shorter_half_offer_delay_ago()) { // SIP_SD_89
             send_unicast_offer_service(_info);
         } else { // SIP_SD_90
@@ -2825,6 +2826,13 @@ void service_discovery_impl::send_uni_or_multicast_offerservice(const std::share
         // SIP_SD_91
         // Find messages received with Unicast Flag set to 0 (multicast), shall be ignored
     }
+    */
+	if (_unicast_flag) {
+		send_unicast_offer_service(_info);
+	} else {
+		//FindService with Unicast Flag = 0 shall be ignored
+	}
+
 }
 
 bool service_discovery_impl::last_offer_shorter_half_offer_delay_ago() {
