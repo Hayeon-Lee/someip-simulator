@@ -20,7 +20,13 @@
             "instance": "0x2222",
             "unreliable": "30501",
 	    "reliable": "30501"
-        }
+        },
+	{
+		"service": "0x1501",
+		"instance": "0x3333",
+		"urealiable": "30502",
+		"reliable": "30502"
+	}
     ],
     "routing": "hello_world_service",
     "service-discovery": {

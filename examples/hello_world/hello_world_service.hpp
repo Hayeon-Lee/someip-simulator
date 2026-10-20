@@ -23,6 +23,7 @@
 static vsomeip::service_t service_id = 0x1501;
 static vsomeip::instance_t service_instance_id = 0x2222;
 //static vsomeip::method_t service_method_id = 0x0001;
+static vsomeip::instance_t service_instance_id_2 = 0x3333;
 
 class hello_world_service {
 public:
@@ -54,6 +55,8 @@ public:
         // register a message handler callback for messages sent to our service
         app_->register_message_handler(service_id, service_instance_id, vsomeip::ANY_METHOD,
                                        std::bind(&hello_world_service::on_message_cbk, this, std::placeholders::_1));
+	app_->register_message_handler(service_id, service_instance_id_2, vsomeip::ANY_METHOD,
+			std::bind(&hello_world_service::on_message_cbk, this, std::placeholders::_1));
 
         // register a state handler to get called back after registration at the
         // runtime was successful
@@ -74,10 +77,12 @@ public:
 //        std::this_thread::sleep_for(std::chrono::seconds(5));
         // Stop offering the service
         app_->stop_offer_service(service_id, service_instance_id);
-        // unregister the state handler
+        app_->stop_offer_service(service_id, service_instance_id_2);
+	// unregister the state handler
         app_->unregister_state_handler();
-        // unregister the message handler
+	// unregister the message handler
         app_->unregister_message_handler(service_id, service_instance_id, vsomeip::ANY_METHOD);
+	app_->unregister_message_handler(service_id, service_instance_id_2, vsomeip::ANY_METHOD);
         // shutdown the application
         app_->stop();
     }
@@ -92,6 +97,7 @@ public:
         if (_state == vsomeip::state_type_e::ST_REGISTERED) {
             // we are registered at the runtime and can offer our service
             app_->offer_service(service_id, service_instance_id, 0x02);
+	    app_->offer_service(service_id, service_instance_id_2, 0x02);
         }
     }
 
